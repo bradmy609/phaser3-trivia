@@ -32,9 +32,6 @@ export default class MainMenuScene extends Phaser.Scene {
             .setDepth(0);
         const buttonSpacing = this.game.config.height/10;
 
-        // const button = new CustomButton(this, this.game.config.width/2, buttonSpacing*5, this.game.config.width/10, this.game.config.height/20, 5, 'Create', colors, function p(e){console.log(e)});
-        // button.setDepth(10);
-
         const buttonBox = this.createRectangle(this.game.config.width / 2, buttonSpacing*5.7, this.game.config.width/2, 425, 5, '0x000000', '0xA9A9A9', 0.15)
         // Title
         const title = this.add.text(this.game.config.width / 2, buttonSpacing*1.5, 'Tricky Trivia', { fontSize: '40px', fill: '#ffffff' })
@@ -67,7 +64,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
         groupInput.on('textchange', function (e) {
             this.groupInputText = e.text;
-            console.log(this.groupInputText)
+            // console.log(this.groupInputText)
         }.bind(this))
         groupButton.on('pointerdown', this.multiplayerCallback.bind(this, 'createGroup'));
 
@@ -78,10 +75,18 @@ export default class MainMenuScene extends Phaser.Scene {
 
         joinInput.on('textchange', function (e) {
             this.joinInputText = e.text;
-            console.log(this.joinInputText);
         }.bind(this))
 
         joinButton.on('pointerdown', this.multiplayerCallback.bind(this, 'joinGroup'));
+
+        socket.socket.addEventListener('message', (event) => {
+            console.log('Received message:', event.data);
+            const data = JSON.parse(event.data);
+            if (data.type === 'group_created') {
+              // Transition to the waiting scene
+              this.scene.start('WaitingScene', data);
+            }
+          });
     }
 
     multiplayerCallback(action) {

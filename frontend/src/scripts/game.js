@@ -6,6 +6,7 @@ import PreloadScene from './scenes/preloadScene'
 import Example from './scenes/skeletonScene'
 import TestScene from './scenes/testScene'
 import MainMenuScene from './scenes/mainMenuScene'
+import WaitingScene from './scenes/waitingScene'
 
 const DEFAULT_WIDTH = 1280
 const DEFAULT_HEIGHT = 720
@@ -22,9 +23,9 @@ const config = {
   dom: {
     createContainer: true
   },
-  backgroundColor: '#000000',
+  backgroundColor: '#333333',
   parent: 'phaser-game',
-  scene: [MainMenuScene, TestScene]
+  scene: [MainMenuScene, TestScene, WaitingScene]
 }
 
 window.addEventListener('load', () => {

@@ -12,7 +12,7 @@ const groupManagement = {}; // Declare the group management data structure
 
 wss.on('connection', (ws) => {
     const clientID = uuidv4();; // Implement your unique ID generation logic
-    console.log('WebSocket connection established.');
+    console.log(`WebSocket connection established with clientID: ${clientID}`);
     clients.set(clientID, ws);
     ws.clientID = clientID;
     ws.send(JSON.stringify({ type: 'clientID', clientID })); // Send the client identifier to the client
@@ -22,47 +22,45 @@ wss.on('connection', (ws) => {
 
     ws.on('message', (message) => {
         const messageString = message.toString('utf8'); // Convert buffer to string
-        const messageObject = JSON.parse(messageString);
+        const data = JSON.parse(messageString);
         const senderClientID = clientID;
-        console.log(`Message received from client: ${senderClientID}`, messageObject);
+        console.log(`Message received from client: ${senderClientID}`, data);
         // Handle received messages from the client
-    });
-
-    ws.on('close', () => {
-        console.log('WebSocket connection closed.');
-    });
-});
-
-wss.on('connection', (ws) => {
-    console.log('WebSocket connection established. Client ID:', clientID);
-
-    ws.on('message', (message) => {
-        const data = JSON.parse(message);
-
         if (data.action === 'createGroup') {
             console.log('Creating group.... groupCode:', data.value, 'Client ID:', clientID);
             const groupCode = data.value;
-            groupManagement[groupCode] = { participants: [ws] };
+            groupManagement[groupCode] = { participants: [ws], clientIDs: [senderClientID] };
             // Notify the creator about successful group creation
-            ws.send(JSON.stringify({ message: 'Group created successfully' }));
+            ws.send(JSON.stringify({ message: 'Group created successfully', type: 'group_created', role: 'leader', groupName: groupCode }));
         } else if (data.action === 'joinGroup') {
             const groupCode = data.value;
             const group = groupManagement[groupCode];
             if (group) {
-                group.participants.push(ws);
-                console.log('Current group consists of:', group.participants.length);
-                group.participants.forEach(ws => {
-                    console.log(ws.clientID);
-                })
-                // Notify all participants about a new member joining
-                group.participants.forEach(participant => {
-                    participant.send(JSON.stringify({ message: 'New member joined' }));
-                });
-            } else {
+                const clientsInGroup = group.participants.map(ws => ws.clientID);
+                if (clientsInGroup.includes(ws.clientID)) {
+                    console.log(`You are already in this group!`)
+                } else {
+                    group.participants.push(ws);
+                    group.clientIDs.push(ws.clientID);
+                    console.log('Current group consists of:', group.participants.length);
+                    group.participants.forEach(ws => {
+                        console.log(ws.clientID);
+                    })
+                    // Notify all participants about a new member joining
+                    group.participants.forEach(participant => {
+                        participant.send(JSON.stringify({ message: 'New member joined' }));
+                    });
+                }
+            }
+            else {
                 // Handle group not found
                 ws.send(JSON.stringify({ message: 'Group not found' }));
             }
         }
+    });
+
+    ws.on('close', () => {
+        console.log('WebSocket connection closed.');
     });
 });
 
